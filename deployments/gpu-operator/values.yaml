@@ -151,7 +151,7 @@ driver:
   usePrecompiled: false
   repository: nvcr.io/nvidia
   image: driver
-  version: "595.71.05"
+  version: "595.91.07"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   startupProbe:
@@ -201,7 +201,7 @@ driver:
     image: k8s-driver-manager
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
-    version: v0.11.0
+    version: v0.12.0
     imagePullPolicy: IfNotPresent
     env: []
   env: []
@@ -242,7 +242,7 @@ devicePlugin:
   enabled: true
   repository: nvcr.io/nvidia
   image: k8s-device-plugin
-  version: v0.19.3
+  version: v0.20.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   args: []
@@ -360,7 +360,7 @@ gfd:
   enabled: true
   repository: nvcr.io/nvidia
   image: k8s-device-plugin
-  version: v0.19.3
+  version: v0.20.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -371,7 +371,7 @@ migManager:
   enabled: true
   repository: nvcr.io/nvidia/cloud-native
   image: k8s-mig-manager
-  version: v0.14.4
+  version: v0.15.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -475,7 +475,7 @@ vgpuManager:
     image: k8s-driver-manager
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
-    version: v0.11.0
+    version: v0.12.0
     imagePullPolicy: IfNotPresent
     env: []
    # kernel module configuration for vGPU manager
@@ -487,7 +487,7 @@ vgpuDeviceManager:
   enabled: true
   repository: nvcr.io/nvidia/cloud-native
   image: vgpu-device-manager
-  version: v0.4.2
+  version: v0.5.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -500,7 +500,7 @@ vfioManager:
   enabled: true
   repository: nvcr.io/nvidia/cloud-native
   image: k8s-driver-manager
-  version: v0.11.0
+  version: v0.12.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -510,7 +510,7 @@ vfioManager:
     image: k8s-driver-manager
     # When choosing a different version of k8s-driver-manager, DO NOT downgrade to a version lower than v0.6.4
     # to ensure k8s-driver-manager stays compatible with gpu-operator starting from v24.3.0
-    version: v0.11.0
+    version: v0.12.0
     imagePullPolicy: IfNotPresent
     env: []
   hostNetwork: false
@@ -528,7 +528,7 @@ sandboxDevicePlugin:
   enabled: true
   repository: nvcr.io/nvidia
   image: kubevirt-gpu-device-plugin
-  version: v1.5.0
+  version: v1.6.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   args: []
@@ -541,7 +541,7 @@ kataSandboxDevicePlugin:
   enabled: true
   repository: nvcr.io/nvidia/cloud-native
   image: nvidia-sandbox-device-plugin
-  version: "v0.0.4"
+  version: "v0.0.5"
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   args: []
@@ -554,7 +554,7 @@ ccManager:
   defaultMode: "on"
   repository: nvcr.io/nvidia/cloud-native
   image: k8s-cc-manager
-  version: v0.4.2
+  version: v0.4.3
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   resources: {}
@@ -579,9 +579,9 @@ gpuCluster:
 # is managed by the GPUCluster CR (rendered only when
 # gpuCluster.deployCR=true).
 draDriver:
-  repository: registry.k8s.io/dra-driver-nvidia
+  repository: nvcr.io/nvidia
   image: dra-driver-nvidia-gpu
-  version: v0.4.1
+  version: v0.5.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   # featureGates toggles DRA driver feature gates; rendered as FEATURE_GATES.

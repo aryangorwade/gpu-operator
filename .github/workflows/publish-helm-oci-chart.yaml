@@ -23,6 +23,13 @@ on:
       operator_version:
         required: true
         type: string
+    outputs:
+      chart_reference:
+        description: "The OCI reference of the published Helm chart"
+        value: ${{ jobs.publish-helm-chart.outputs.chart_reference }}
+      chart_version:
+        description: "The version of the published Helm chart"
+        value: ${{ jobs.publish-helm-chart.outputs.chart_version }}
 
 permissions:
   contents: read
@@ -36,14 +43,17 @@ jobs:
   publish-helm-chart:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      chart_reference: ${{ steps.publish.outputs.chart_reference }}
+      chart_version: ${{ steps.package.outputs.chart_version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         name: Check out code
         with:
           persist-credentials: false
 
       - name: Set up Helm
-        uses: azure/setup-helm@v5.0.1
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
 
       - name: Set chart image repository
         env:
@@ -51,7 +61,7 @@ jobs:
         run: echo "OPERATOR_REPOSITORY=${OPERATOR_IMAGE%/*}" >> "${GITHUB_ENV}"
 
       - name: Update chart image repository
-        uses: mikefarah/yq@v4
+        uses: mikefarah/yq@c14f446382944492701b16c1ddb48bb9dbe683e3 # v4
         with:
           cmd: yq -i '.operator.repository = env(OPERATOR_REPOSITORY) | .validator.repository = env(OPERATOR_REPOSITORY)' deployments/gpu-operator/values.yaml
 
@@ -89,6 +99,7 @@ jobs:
           echo "chart_version=${CHART_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Publish Helm OCI chart
+        id: publish
         env:
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           CHART_PACKAGE: ${{ steps.package.outputs.chart_package }}
@@ -100,4 +111,6 @@ jobs:
           CHART_REPOSITORY="oci://ghcr.io/${LOWERCASE_REPO_OWNER}/gpu-operator/charts"
 
           helm push "${CHART_PACKAGE}" "${CHART_REPOSITORY}"
+
+          echo "chart_reference=${CHART_REPOSITORY}/gpu-operator" >> "${GITHUB_OUTPUT}"
           echo "::notice::Published Helm chart to ${CHART_REPOSITORY}/gpu-operator:${CHART_VERSION}"

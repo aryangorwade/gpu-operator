@@ -80,18 +80,25 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         name: Check out code
         with:
           persist-credentials: false
       - name: Download values override file
         if: ${{ inputs.use_values_override }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: values-overrides
           path: ${{ github.workspace }}
+      - name: Set up Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      - name: Verify the published Helm chart is available
+        env:
+          HELM_CHART: ${{ needs.publish-helm-oci-chart.outputs.chart_reference }}
+          HELM_CHART_VERSION: ${{ needs.publish-helm-oci-chart.outputs.chart_version }}
+        run: helm show chart "${HELM_CHART}" --version "${HELM_CHART_VERSION}"
       - name: Set up Holodeck
-        uses: NVIDIA/holodeck@v0.3.7
+        uses: NVIDIA/holodeck@e0f3932cf284d92421a55536839fa821a14116aa # v0.3.7
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -99,7 +106,7 @@ jobs:
           holodeck_config: "tests/holodeck.yaml"
       - name: Get public dns name
         id: get_public_dns_name
-        uses: mikefarah/yq@v4
+        uses: mikefarah/yq@c14f446382944492701b16c1ddb48bb9dbe683e3 # v4
         with:
           cmd: yq '.status.properties[] | select(.name == "public-dns-name") | .value' /github/workspace/.cache/holodeck.yaml
       - name: Set test environment
@@ -124,6 +131,8 @@ jobs:
         env:
           OPERATOR_VERSION: ${{ needs.variables.outputs.operator_version }}
           OPERATOR_IMAGE: ${{ needs.variables.outputs.operator_image }}
+          HELM_CHART: ${{ needs.publish-helm-oci-chart.outputs.chart_reference }}
+          HELM_CHART_VERSION: ${{ needs.publish-helm-oci-chart.outputs.chart_version }}
           GPU_PRODUCT_NAME: "Tesla-T4"
           SKIP_LAUNCH: "true"
           CONTAINER_RUNTIME: "containerd"
@@ -134,7 +143,7 @@ jobs:
           exit $rc
       - name: Archive test logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: containerd-e2e-test-logs
           path: ./logs/
@@ -148,18 +157,25 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         name: Check out code
         with:
           persist-credentials: false
       - name: Download values override file
         if: ${{ inputs.use_values_override }}
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: values-overrides
           path: ${{ github.workspace }}
+      - name: Set up Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      - name: Verify the published Helm chart is available
+        env:
+          HELM_CHART: ${{ needs.publish-helm-oci-chart.outputs.chart_reference }}
+          HELM_CHART_VERSION: ${{ needs.publish-helm-oci-chart.outputs.chart_version }}
+        run: helm show chart "${HELM_CHART}" --version "${HELM_CHART_VERSION}"
       - name: Set up Holodeck
-        uses: NVIDIA/holodeck@v0.3.7
+        uses: NVIDIA/holodeck@e0f3932cf284d92421a55536839fa821a14116aa # v0.3.7
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -167,7 +183,7 @@ jobs:
           holodeck_config: "tests/holodeck.yaml"
       - name: Get public dns name
         id: get_public_dns_name
-        uses: mikefarah/yq@v4
+        uses: mikefarah/yq@c14f446382944492701b16c1ddb48bb9dbe683e3 # v4
         with:
           cmd: yq '.status.properties[] | select(.name == "public-dns-name") | .value' /github/workspace/.cache/holodeck.yaml
       - name: Set test environment
@@ -192,6 +208,8 @@ jobs:
         env:
           OPERATOR_VERSION: ${{ needs.variables.outputs.operator_version }}
           OPERATOR_IMAGE: ${{ needs.variables.outputs.operator_image }}
+          HELM_CHART: ${{ needs.publish-helm-oci-chart.outputs.chart_reference }}
+          HELM_CHART_VERSION: ${{ needs.publish-helm-oci-chart.outputs.chart_version }}
           GPU_PRODUCT_NAME: "Tesla-T4"
           SKIP_LAUNCH: "true"
           CONTAINER_RUNTIME: "containerd"
@@ -202,7 +220,7 @@ jobs:
           exit $rc
       - name: Archive test logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: nvidiadriver-e2e-test-logs
           path: ./logs/
