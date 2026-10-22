@@ -302,8 +302,8 @@ func TestUpgradeReconcileNVIDIADriverAutoUpgradeDisabledScope(t *testing.T) {
 	assert.Contains(t, updated.Labels, upgrade.GetUpgradeStateLabelKey())
 }
 
-func TestUpgradeReconcileClusterPolicyPathsUnchanged(t *testing.T) {
-	t.Run("legacy driver builds state with the daemonset app label", func(t *testing.T) {
+func TestUpgradeReconcileClusterPolicyPaths(t *testing.T) {
+	t.Run("legacy driver builds state with the component label", func(t *testing.T) {
 		cp := &gpuv1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: "cluster-policy"}}
 		cp.Spec.Driver.UpgradePolicy = &upgrade_v1alpha1.DriverUpgradePolicySpec{AutoUpgrade: true}
 		r, stateManager := newTestUpgradeReconciler(t, cp)
@@ -311,7 +311,7 @@ func TestUpgradeReconcileClusterPolicyPathsUnchanged(t *testing.T) {
 		result, err := r.Reconcile(context.Background(), upgradeSingletonRequest())
 		require.NoError(t, err)
 		assert.Equal(t, plannedRequeueInterval, result.RequeueAfter)
-		assert.Equal(t, map[string]string{DriverLabelKey: DriverLabelValue}, stateManager.buildLabels)
+		assert.Equal(t, map[string]string{AppComponentLabelKey: DriverAppComponentLabelValue}, stateManager.buildLabels)
 		assert.Equal(t, 1, stateManager.applyCalls)
 	})
 

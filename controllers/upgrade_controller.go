@@ -126,21 +126,11 @@ func (r *UpgradeReconciler) reconcileClusterPolicyDriverUpgrades(ctx context.Con
 	}
 	r.OperatorMetrics.driverAutoUpgradeEnabled.Set(driverAutoUpgradeEnabled)
 
-	var driverLabel map[string]string
-
-	// initialize with common app=nvidia-driver-daemonset label
-	driverLabelKey := DriverLabelKey
-	driverLabelValue := DriverLabelValue
-
-	if clusterPolicyCtrl.openshift != "" && clusterPolicyCtrl.ocpDriverToolkit.enabled {
-		// For OCP, when DTK is enabled app=nvidia-driver-daemonset label is not constant and changes
-		// based on rhcos version. Hence use DTK label instead
-		driverLabelKey = ocpDriverToolkitIdentificationLabel
-		driverLabelValue = ocpDriverToolkitIdentificationValue
-	}
-
-	driverLabel = map[string]string{driverLabelKey: driverLabelValue}
-	reqLogger.Info("Using label selector", "key", driverLabelKey, "value", driverLabelValue)
+	// The component label is shared by standard, precompiled, and Driver Toolkit
+	// drivers. Unlike DTK's version-specific app label, it lets us discover existing
+	// drivers without depending on the ClusterPolicy controller's initialization.
+	driverLabel := map[string]string{AppComponentLabelKey: DriverAppComponentLabelValue}
+	reqLogger.Info("Using label selector", "key", AppComponentLabelKey, "value", DriverAppComponentLabelValue)
 
 	state, err := r.StateManager.BuildState(ctx, r.OperatorNamespace,
 		driverLabel)
