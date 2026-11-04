@@ -38,6 +38,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	nodev1 "k8s.io/api/node/v1"
 	nodev1beta1 "k8s.io/api/node/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -351,7 +352,7 @@ func ServiceAccount(n ClusterPolicyController) (gpuv1.State, error) {
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -363,13 +364,8 @@ func ServiceAccount(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	if err := n.client.Create(ctx, obj); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, skipping update")
-			return gpuv1.Ready, nil
-		}
-
-		logger.Info("Couldn't create", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &corev1.ServiceAccount{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 	return gpuv1.Ready, nil
@@ -386,7 +382,7 @@ func Role(n ClusterPolicyController) (gpuv1.State, error) {
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -398,18 +394,8 @@ func Role(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	if err := n.client.Create(ctx, obj); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
-			err = n.client.Update(ctx, obj)
-			if err != nil {
-				logger.Info("Couldn't update", "Error", err)
-				return gpuv1.NotReady, err
-			}
-			return gpuv1.Ready, nil
-		}
-
-		logger.Info("Couldn't create", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &rbacv1.Role{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 
@@ -427,7 +413,7 @@ func RoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -449,18 +435,8 @@ func RoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	if err := n.client.Create(ctx, obj); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
-			err = n.client.Update(ctx, obj)
-			if err != nil {
-				logger.Info("Couldn't update", "Error", err)
-				return gpuv1.NotReady, err
-			}
-			return gpuv1.Ready, nil
-		}
-
-		logger.Info("Couldn't create", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &rbacv1.RoleBinding{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 
@@ -487,13 +463,12 @@ func ClusterRole(n ClusterPolicyController) (gpuv1.State, error) {
 	ctx := n.ctx
 	state := n.idx
 	obj := n.resources[state].ClusterRole.DeepCopy()
-	obj.Namespace = n.operatorNamespace
 
 	logger := n.logger.WithValues("ClusterRole", obj.Name, "Namespace", obj.Namespace)
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -502,7 +477,7 @@ func ClusterRole(n ClusterPolicyController) (gpuv1.State, error) {
 	}
 
 	if !isRBACEnabled(obj.Name, &n.singleton.Spec) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Error(err, "Couldn't delete")
 			return gpuv1.NotReady, err
@@ -514,18 +489,8 @@ func ClusterRole(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	if err := n.client.Create(ctx, obj); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
-			err = n.client.Update(ctx, obj)
-			if err != nil {
-				logger.Info("Couldn't update", "Error", err)
-				return gpuv1.NotReady, err
-			}
-			return gpuv1.Ready, nil
-		}
-
-		logger.Info("Couldn't create", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &rbacv1.ClusterRole{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 
@@ -537,13 +502,12 @@ func ClusterRoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 	ctx := n.ctx
 	state := n.idx
 	obj := n.resources[state].ClusterRoleBinding.DeepCopy()
-	obj.Namespace = n.operatorNamespace
 
 	logger := n.logger.WithValues("ClusterRoleBinding", obj.Name, "Namespace", obj.Namespace)
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -552,7 +516,7 @@ func ClusterRoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 	}
 
 	if !isRBACEnabled(obj.Name, &n.singleton.Spec) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Error(err, "Couldn't delete")
 			return gpuv1.NotReady, err
@@ -568,18 +532,8 @@ func ClusterRoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	if err := n.client.Create(ctx, obj); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
-			err = n.client.Update(ctx, obj)
-			if err != nil {
-				logger.Info("Couldn't update", "Error", err)
-				return gpuv1.NotReady, err
-			}
-			return gpuv1.Ready, nil
-		}
-
-		logger.Info("Couldn't create", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &rbacv1.ClusterRoleBinding{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 
@@ -598,7 +552,7 @@ func createConfigMap(n ClusterPolicyController, configMapIdx int) (gpuv1.State, 
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -4215,7 +4169,7 @@ func Deployment(n ClusterPolicyController) (gpuv1.State, error) {
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -4708,7 +4662,7 @@ func DaemonSet(n ClusterPolicyController) (gpuv1.State, error) {
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -4907,7 +4861,7 @@ func SecurityContextConstraints(n ClusterPolicyController) (gpuv1.State, error) 
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -4963,7 +4917,7 @@ func Service(n ClusterPolicyController) (gpuv1.State, error) {
 
 	// Check if state is disabled and cleanup resource if exists
 	if !n.isStateEnabled(n.stateNames[n.idx]) {
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -4981,27 +4935,8 @@ func Service(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	found := &corev1.Service{}
-	err = n.client.Get(ctx, types.NamespacedName{Namespace: obj.Namespace, Name: obj.Name}, found)
-	if err != nil && apierrors.IsNotFound(err) {
-		logger.Info("Not found, creating...")
-		err = n.client.Create(ctx, obj)
-		if err != nil {
-			logger.Info("Couldn't create", "Error", err)
-			return gpuv1.NotReady, err
-		}
-		return gpuv1.Ready, nil
-	} else if err != nil {
-		return gpuv1.NotReady, err
-	}
-
-	logger.Info("Found Resource, updating...")
-	obj.ResourceVersion = found.ResourceVersion
-	obj.Spec.ClusterIP = found.Spec.ClusterIP
-
-	err = n.client.Update(ctx, obj)
-	if err != nil {
-		logger.Info("Couldn't update", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &corev1.Service{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 	return gpuv1.Ready, nil
@@ -5088,7 +5023,7 @@ func ServiceMonitor(n ClusterPolicyController) (gpuv1.State, error) {
 		if !serviceMonitorCRDExists {
 			return gpuv1.Ready, nil
 		}
-		err := n.client.Delete(ctx, obj)
+		err := deleteIfExists(ctx, n.client, obj)
 		if err != nil && !apierrors.IsNotFound(err) {
 			logger.Info("Couldn't delete", "Error", err)
 			return gpuv1.NotReady, err
@@ -5103,7 +5038,7 @@ func ServiceMonitor(n ClusterPolicyController) (gpuv1.State, error) {
 			if !serviceMonitorCRDExists {
 				return gpuv1.Ready, nil
 			}
-			err := n.client.Delete(ctx, obj)
+			err := deleteIfExists(ctx, n.client, obj)
 			if err != nil && !apierrors.IsNotFound(err) {
 				logger.Info("Couldn't delete", "Error", err)
 				return gpuv1.NotReady, err
@@ -5204,26 +5139,8 @@ func transformRuntimeClassLegacy(n ClusterPolicyController, spec nodev1.RuntimeC
 		return gpuv1.NotReady, err
 	}
 
-	found := &nodev1beta1.RuntimeClass{}
-	err := n.client.Get(ctx, types.NamespacedName{Namespace: "", Name: obj.Name}, found)
-	if err != nil && apierrors.IsNotFound(err) {
-		logger.Info("Not found, creating...")
-		err = n.client.Create(ctx, obj)
-		if err != nil {
-			logger.Info("Couldn't create", "Error", err)
-			return gpuv1.NotReady, err
-		}
-		return gpuv1.Ready, nil
-	} else if err != nil {
-		return gpuv1.NotReady, err
-	}
-
-	logger.Info("Found Resource, updating...")
-	obj.ResourceVersion = found.ResourceVersion
-
-	err = n.client.Update(ctx, obj)
-	if err != nil {
-		logger.Info("Couldn't update", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &nodev1beta1.RuntimeClass{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 	return gpuv1.Ready, nil
@@ -5251,26 +5168,8 @@ func transformRuntimeClass(n ClusterPolicyController, spec nodev1.RuntimeClass) 
 		return gpuv1.NotReady, err
 	}
 
-	found := &nodev1.RuntimeClass{}
-	err := n.client.Get(ctx, types.NamespacedName{Namespace: "", Name: obj.Name}, found)
-	if err != nil && apierrors.IsNotFound(err) {
-		logger.Info("Not found, creating...")
-		err = n.client.Create(ctx, obj)
-		if err != nil {
-			logger.Info("Couldn't create", "Error", err)
-			return gpuv1.NotReady, err
-		}
-		return gpuv1.Ready, nil
-	} else if err != nil {
-		return gpuv1.NotReady, err
-	}
-
-	logger.Info("Found Resource, updating...")
-	obj.ResourceVersion = found.ResourceVersion
-
-	err = n.client.Update(ctx, obj)
-	if err != nil {
-		logger.Info("Couldn't update", "Error", err)
+	if err := syncRenderedObject(ctx, n.client, obj, &nodev1.RuntimeClass{}); err != nil {
+		logger.Info("Couldn't sync", "Error", err)
 		return gpuv1.NotReady, err
 	}
 	return gpuv1.Ready, nil

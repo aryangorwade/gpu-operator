@@ -187,7 +187,7 @@ func TestClusterPolicyUpdater_RetryOnConflict(t *testing.T) {
 		WithObjects(clusterPolicy).
 		WithStatusSubresource(clusterPolicy).
 		WithInterceptorFuncs(interceptor.Funcs{
-			SubResourceUpdate: func(ctx context.Context, cl client.Client, subResourceName string, obj client.Object, opts ...client.SubResourceUpdateOption) error {
+			SubResourcePatch: func(ctx context.Context, cl client.Client, subResourceName string, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
 				updateCalls++
 				if updateCalls == 1 {
 					return apierrors.NewConflict(
@@ -196,7 +196,7 @@ func TestClusterPolicyUpdater_RetryOnConflict(t *testing.T) {
 						errors.New("the object has been modified"),
 					)
 				}
-				return cl.SubResource(subResourceName).Update(ctx, obj, opts...)
+				return cl.SubResource(subResourceName).Patch(ctx, obj, patch, opts...)
 			},
 		}).
 		Build()
@@ -211,6 +211,25 @@ func TestClusterPolicyUpdater_RetryOnConflict(t *testing.T) {
 	assert.Len(t, got.Status.Conditions, 2)
 }
 
+func TestClusterPolicyUpdater_SkipsUnchangedStatus(t *testing.T) {
+	clusterPolicy := newClusterPolicy("cluster-policy")
+	patchCalls := 0
+	c := fake.NewClientBuilder().
+		WithScheme(clusterPolicyScheme(t)).
+		WithObjects(clusterPolicy).
+		WithStatusSubresource(clusterPolicy).
+		WithInterceptorFuncs(interceptor.Funcs{
+			SubResourcePatch: func(ctx context.Context, cl client.Client, subResourceName string, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
+				patchCalls++
+				return cl.SubResource(subResourceName).Patch(ctx, obj, patch, opts...)
+			},
+		}).Build()
+	u := NewClusterPolicyUpdater(c)
+	require.NoError(t, u.SetConditionsReady(t.Context(), clusterPolicy, Reconciled, "ready"))
+	require.NoError(t, u.SetConditionsReady(t.Context(), clusterPolicy, Reconciled, "ready"))
+	require.Equal(t, 1, patchCalls)
+}
+
 func TestClusterPolicyUpdater_UpdateError(t *testing.T) {
 	clusterPolicy := newClusterPolicy("cluster-policy")
 
@@ -219,7 +238,7 @@ func TestClusterPolicyUpdater_UpdateError(t *testing.T) {
 		WithObjects(clusterPolicy).
 		WithStatusSubresource(clusterPolicy).
 		WithInterceptorFuncs(interceptor.Funcs{
-			SubResourceUpdate: func(ctx context.Context, cl client.Client, subResourceName string, obj client.Object, opts ...client.SubResourceUpdateOption) error {
+			SubResourcePatch: func(ctx context.Context, cl client.Client, subResourceName string, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
 				return errors.New("status update boom")
 			},
 		}).

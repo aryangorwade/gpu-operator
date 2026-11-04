@@ -19,6 +19,7 @@ package conditions
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,6 +64,7 @@ func (u *clusterPolicyUpdater) updateConditions(ctx context.Context, cr *nvidiav
 	if err := u.client.Get(ctx, types.NamespacedName{Name: cr.Name}, instance); err != nil {
 		return fmt.Errorf("failed to get ClusterPolicy instance for status update: %w", err)
 	}
+	before := instance.DeepCopy()
 
 	switch statusType {
 	case Ready:
@@ -95,7 +97,10 @@ func (u *clusterPolicyUpdater) updateConditions(ctx context.Context, cr *nvidiav
 		return fmt.Errorf("unknown status type provided: %s", statusType)
 	}
 
-	return u.client.Status().Update(ctx, instance)
+	if reflect.DeepEqual(before.Status, instance.Status) {
+		return nil
+	}
+	return u.client.Status().Patch(ctx, instance, client.MergeFrom(before))
 }
 
 // setConditions updates the conditions of the ClusterPolicy CR

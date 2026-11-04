@@ -322,14 +322,16 @@ func updateCRState(ctx context.Context, r *ClusterPolicyReconciler, namespacedNa
 	instance := &gpuv1.ClusterPolicy{}
 	if err := r.Get(ctx, namespacedName, instance); err != nil {
 		log.FromContext(ctx).Error(err, "Failed to get ClusterPolicy instance for status update")
+		return
 	}
 	if instance.Status.State == state {
 		// state is unchanged
 		return
 	}
 	// Update the CR state
+	before := instance.DeepCopy()
 	instance.SetStatus(state, clusterPolicyCtrl.operatorNamespace)
-	if err := r.Client.Status().Update(ctx, instance); err != nil {
+	if err := r.Client.Status().Patch(ctx, instance, client.MergeFrom(before)); err != nil {
 		log.FromContext(ctx).Error(err, "Failed to update ClusterPolicy status")
 	}
 }
