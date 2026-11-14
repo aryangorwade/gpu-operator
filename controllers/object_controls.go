@@ -365,7 +365,7 @@ func ServiceAccount(n ClusterPolicyController) (gpuv1.State, error) {
 
 	if err := n.client.Create(ctx, obj); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, skipping update")
+			logger.V(consts.LogLevelDebug).Info("Found Resource, skipping update")
 			return gpuv1.Ready, nil
 		}
 
@@ -400,7 +400,7 @@ func Role(n ClusterPolicyController) (gpuv1.State, error) {
 
 	if err := n.client.Create(ctx, obj); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
+			logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 			err = n.client.Update(ctx, obj)
 			if err != nil {
 				logger.Info("Couldn't update", "Error", err)
@@ -451,7 +451,7 @@ func RoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 
 	if err := n.client.Create(ctx, obj); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
+			logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 			err = n.client.Update(ctx, obj)
 			if err != nil {
 				logger.Info("Couldn't update", "Error", err)
@@ -516,7 +516,7 @@ func ClusterRole(n ClusterPolicyController) (gpuv1.State, error) {
 
 	if err := n.client.Create(ctx, obj); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
+			logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 			err = n.client.Update(ctx, obj)
 			if err != nil {
 				logger.Info("Couldn't update", "Error", err)
@@ -570,7 +570,7 @@ func ClusterRoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 
 	if err := n.client.Create(ctx, obj); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
+			logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 			err = n.client.Update(ctx, obj)
 			if err != nil {
 				logger.Info("Couldn't update", "Error", err)
@@ -640,7 +640,7 @@ func createConfigMap(n ClusterPolicyController, configMapIdx int) (gpuv1.State, 
 			return gpuv1.NotReady, err
 		}
 
-		logger.Info("Found Resource, updating...")
+		logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 		err = n.client.Update(ctx, obj)
 		if err != nil {
 			logger.Info("Couldn't update", "Error", err)
@@ -4229,7 +4229,7 @@ func Deployment(n ClusterPolicyController) (gpuv1.State, error) {
 
 	if err := n.client.Create(ctx, obj); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			logger.Info("Found Resource, updating...")
+			logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 			err = n.client.Update(ctx, obj)
 			if err != nil {
 				logger.Info("Couldn't update", "Error", err)
@@ -4940,7 +4940,7 @@ func SecurityContextConstraints(n ClusterPolicyController) (gpuv1.State, error) 
 		return gpuv1.NotReady, err
 	}
 
-	logger.Info("Found Resource, updating...")
+	logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 	obj.ResourceVersion = found.ResourceVersion
 
 	err = n.client.Update(ctx, obj)
@@ -4995,7 +4995,7 @@ func Service(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	logger.Info("Found Resource, updating...")
+	logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 	obj.ResourceVersion = found.ResourceVersion
 	obj.Spec.ClusterIP = found.Spec.ClusterIP
 
@@ -5171,7 +5171,7 @@ func ServiceMonitor(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	logger.Info("Found Resource, updating...")
+	logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 	obj.ResourceVersion = found.ResourceVersion
 
 	err = n.client.Update(ctx, obj)
@@ -5218,7 +5218,7 @@ func transformRuntimeClassLegacy(n ClusterPolicyController, spec nodev1.RuntimeC
 		return gpuv1.NotReady, err
 	}
 
-	logger.Info("Found Resource, updating...")
+	logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 	obj.ResourceVersion = found.ResourceVersion
 
 	err = n.client.Update(ctx, obj)
@@ -5265,7 +5265,7 @@ func transformRuntimeClass(n ClusterPolicyController, spec nodev1.RuntimeClass) 
 		return gpuv1.NotReady, err
 	}
 
-	logger.Info("Found Resource, updating...")
+	logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 	obj.ResourceVersion = found.ResourceVersion
 
 	err = n.client.Update(ctx, obj)
@@ -5377,7 +5377,7 @@ func PrometheusRule(n ClusterPolicyController) (gpuv1.State, error) {
 		return gpuv1.NotReady, err
 	}
 
-	logger.Info("Found Resource, updating...")
+	logger.V(consts.LogLevelDebug).Info("Found Resource, updating...")
 	obj.ResourceVersion = found.ResourceVersion
 
 	err = n.client.Update(ctx, obj)
