@@ -4,6 +4,7 @@ lcov.info
 /.licenses-cache
 
 # Binaries for programs and plugins
+/gather
 *.exe
 *.exe~
 *.dll

@@ -64,3 +64,31 @@ Contributions must adhere to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Support and Getting Help
 Please start [a discussion on the GitHub project](https://github.com/NVIDIA/gpu-operator/discussions) for any questions. You can also join our [community Slack](https://inviter.co/dsx-ai-factory). Your feedback is appreciated.
+
+### Collecting diagnostics
+
+On OpenShift, use the GPU Operator image as a must-gather plugin:
+
+```console
+oc adm must-gather --image=<gpu-operator-image>
+```
+
+The image includes `/usr/bin/gather`, which writes diagnostics to `/must-gather`.
+It uses Kubernetes APIs directly; no `kubectl` or `oc` is needed inside the image.
+Static Bash is included for the `oc adm must-gather` container launcher, not for
+the collector itself. Driver diagnostics still execute the existing tools in
+driver pods and require permission to access the `pods/exec` subresource.
+
+For local collection, build and run the same program with your kubeconfig:
+
+```console
+make cmd-gather
+./gather --dest-dir=./gpu-operator-diagnostics
+```
+
+`ARTIFACT_DIR` also sets the output directory. Use `--kubeconfig` to select a
+configuration file, `--namespace` if several GPU Operator installations are
+present, and `--timeout` to change the default ten-minute collection limit.
+Optional APIs and individual log or exec failures are recorded in
+`must-gather.stderr.log` without preventing collection of the remaining data.
+The existing `hack/must-gather.sh` remains available during the transition.

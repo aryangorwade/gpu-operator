@@ -19,6 +19,12 @@ ARG CUDA_SAMPLES_VERSION=12.9
 
 FROM golang:1.27.4@sha256:08bcb99a38f85a265f9a93d1d3323e2440eec333380f3ea26ee0dec9264bb41c AS builder
 
+# oc adm must-gather launches its gather and copy containers with /bin/bash.
+# Use a static binary so the distroless image needs no extra shared libraries.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends bash-static \
+ && rm -rf /var/lib/apt/lists/*
+
 ARG GOPROXY="https://proxy.golang.org,direct"
 ENV GOPROXY=$GOPROXY
 
@@ -118,6 +124,7 @@ LABEL org.opencontainers.image.version="${VERSION}"
 WORKDIR /
 
 COPY --from=shell /busybox /busybox
+COPY --from=builder /bin/bash-static /bin/bash
 USER 0:0
 RUN ["/busybox/ln", "-s", "/busybox/sh", "/bin/sh"]
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/busybox
@@ -125,6 +132,7 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/busybox
 COPY --from=builder /workspace/gpu-operator /usr/bin/
 COPY --from=builder /workspace/manage-crds /usr/bin/
 COPY --from=builder /workspace/cleanup-gpuclusters /usr/bin/
+COPY --from=builder /workspace/gather /usr/bin/gather
 COPY --from=builder /workspace/nvidia-validator /usr/bin/
 COPY --from=builder /workspace/gpu-operator-certification /usr/bin/
 COPY --from=sample-builder /build/vectorAdd /usr/bin/vectorAdd
@@ -144,5 +152,7 @@ COPY deployments/gpu-operator/charts/node-feature-discovery/crds/nfd-api-crds.ya
 USER 1000:1000
 
 COPY LICENSE /licenses/
+COPY --from=builder /usr/share/doc/bash-static/copyright /licenses/bash/copyright
+COPY --from=builder /usr/share/common-licenses/GPL-3 /licenses/bash/GPL-3
 
 ENTRYPOINT ["/usr/bin/gpu-operator"]
