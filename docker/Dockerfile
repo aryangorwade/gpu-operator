@@ -81,6 +81,16 @@ RUN mkdir /busybox \
  && cp /bin/busybox /busybox/busybox \
  && /busybox/busybox --install -s /busybox
 
+# 'oc adm must-gather' starts this image with /bin/bash. Its script uses
+# 'setsid -w' if the image has setsid, and it uses 'sleep infinity'. Busybox
+# has no bash applet and its setsid has no -w option. The sleep of the base
+# image accepts only seconds. Add a bash wrapper that runs the busybox shell
+# with the busybox applets first in PATH, and remove setsid so that oc starts
+# /usr/bin/gather directly.
+RUN rm /busybox/setsid \
+ && printf '#!/busybox/sh\nexport PATH="/busybox:$PATH"\nexec /busybox/sh "$@"\n' > /busybox/bash \
+ && chmod +x /busybox/bash
+
 # Fail the build if busybox prefers applets (CONFIG_FEATURE_PREFER_APPLETS=y).
 # See https://github.com/NVIDIA/k8s-driver-manager/issues/299
 COPY hack/check-busybox-prefer-applets.sh /tmp/check-busybox-prefer-applets.sh
@@ -120,6 +130,7 @@ WORKDIR /
 COPY --from=shell /busybox /busybox
 USER 0:0
 RUN ["/busybox/ln", "-s", "/busybox/sh", "/bin/sh"]
+RUN ["/busybox/ln", "-s", "/busybox/bash", "/bin/bash"]
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/busybox
 
 COPY --from=builder /workspace/gpu-operator /usr/bin/
