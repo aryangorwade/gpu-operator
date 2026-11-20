@@ -139,13 +139,11 @@ func main() {
 			fmt.Fprintf(&nodeLabels, "%s\n- %s\n\n", node.GetName(), strings.ReplaceAll(l, ",", "\n- "))
 		}
 	}
-	if nodeLabels.Len() == 0 {
-		log.Print("FATAL: could not find nodes with NVIDIA PCI labels")
-		return
+	if nodeLabels.Len() > 0 {
+		f := g.create("gpu_nodes.labels")
+		fmt.Fprint(f, nodeLabels.String())
+		f.Close()
 	}
-	f := g.create("gpu_nodes.labels")
-	fmt.Fprint(f, nodeLabels.String())
-	f.Close()
 	gpuNodes := opts{LabelSelector: "nvidia.com/gpu.present=true"}
 	g.getTable(ctx, "gpu_nodes.status", "nodes", "", gpuNodes, wide)
 	g.describe(ctx, "gpu_nodes.descr", "nodes", "", gpuNodes)
